@@ -22,16 +22,20 @@ declare(strict_types=1);
 
 namespace oat\taoMediaManager\model\relation\task;
 
-use common_Exception;
+use core_kernel_classes_Resource;
+use oat\oatbox\filesystem\File;
 use oat\tao\model\task\migration\AbstractStatementMigrationTask;
 use oat\tao\model\task\migration\StatementUnit;
 use oat\tao\model\task\migration\StatementUnitProcessorInterface;
+use oat\taoMediaManager\model\fileManagement\FileManagement;
+use oat\taoMediaManager\model\MediaService;
+use oat\taoMediaManager\model\relation\event\MediaSavedEvent;
+use oat\taoMediaManager\model\relation\event\processor\MediaSavedEventProcessor;
+use oat\taoMediaManager\model\sharedStimulus\parser\SharedStimulusMediaExtractor;
+use tao_models_classes_FileNotFoundException;
 
-class ItemToMediaRelationshipMigrationTask extends AbstractStatementMigrationTask
+class MediaToMediaRelationshipMigrationTask extends AbstractStatementMigrationTask
 {
-    /**
-     * @throws common_Exception
-     */
     protected function processUnit(array $unit): void
     {
         $this->getUnitProcessor()->process(
@@ -39,8 +43,9 @@ class ItemToMediaRelationshipMigrationTask extends AbstractStatementMigrationTas
             ));
     }
 
+
     protected function getUnitProcessor(): StatementUnitProcessorInterface
     {
-        return $this->getServiceLocator()->get(ItemToMediaUnitProcessor::class);
+        return $this->getServiceLocator()->get(MediaToMediaUnitProcessor::class);
     }
 }

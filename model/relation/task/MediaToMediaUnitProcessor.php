@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /**
  * This program is free software; you can redistribute it and/or
@@ -18,12 +18,15 @@
  * Copyright (c) 2020 (original work) Open Assessment Technologies SA;
  */
 
-declare(strict_types=1);
 
 namespace oat\taoMediaManager\model\relation\task;
 
+
 use core_kernel_classes_Resource;
-use oat\oatbox\filesystem\File;
+use oat\generis\model\OntologyAwareTrait;
+use oat\oatbox\service\ConfigurableService;
+use oat\tao\model\task\migration\StatementUnit;
+use oat\tao\model\task\migration\StatementUnitProcessorInterface;
 use oat\taoMediaManager\model\fileManagement\FileManagement;
 use oat\taoMediaManager\model\MediaService;
 use oat\taoMediaManager\model\relation\event\MediaSavedEvent;
@@ -31,10 +34,11 @@ use oat\taoMediaManager\model\relation\event\processor\MediaSavedEventProcessor;
 use oat\taoMediaManager\model\sharedStimulus\parser\SharedStimulusMediaExtractor;
 use tao_models_classes_FileNotFoundException;
 
-class MediaToMediaRelationMigrationTask extends \oat\tao\model\task\migration\AbstractStatementMigrationTask
+class MediaToMediaUnitProcessor extends ConfigurableService implements StatementUnitProcessorInterface
 {
+    use OntologyAwareTrait;
 
-    protected function getTargetClasses(): array
+    public function getTargetClasses(): array
     {
         return array_merge(
             [MediaService::ROOT_CLASS_URI],
@@ -42,14 +46,18 @@ class MediaToMediaRelationMigrationTask extends \oat\tao\model\task\migration\Ab
         );
     }
 
-    protected function processUnit(array $unit): void
+    /**
+     * @throws \common_Exception
+     * @throws \core_kernel_classes_EmptyProperty
+     * @throws \tao_models_classes_FileNotFoundException
+     */
+    public function process(StatementUnit $unit): void
     {
-        $uri = $unit['subject'];
-        $resource = $this->getResource($uri);
+        $resource = $this->getResource($unit->getUri());
 
         $fileLink = $resource->getUniquePropertyValue($this->getProperty(MediaService::PROPERTY_LINK));
-        if (is_null($fileLink)) {
-            throw new tao_models_classes_FileNotFoundException($uri);
+        if ($fileLink === null) {
+            throw new tao_models_classes_FileNotFoundException($unit->getUri());
         }
         $fileLink = $fileLink instanceof core_kernel_classes_Resource ? $fileLink->getUri() : (string)$fileLink;
         $fileSource = $this->getFileManager()->getFileStream($fileLink);
@@ -59,18 +67,18 @@ class MediaToMediaRelationMigrationTask extends \oat\tao\model\task\migration\Ab
         if ($this->isSharedStimulus($mimeType)) {
             $content = $fileSource instanceof File ? $fileSource->read() : $fileSource->getContents();
             $elementIds = $this->getSharedStimulusExtractor()->extractMediaIdentifiers($content);
-            $this->getMediaProcessor()->process(new MediaSavedEvent($uri, $elementIds));
+            $this->getMediaProcessor()->process(new MediaSavedEvent($unit->getUri(), $elementIds));
         }
-    }
-
-    private function getSharedStimulusExtractor(): SharedStimulusMediaExtractor
-    {
-        return $this->getServiceLocator()->get(SharedStimulusMediaExtractor::class);
     }
 
     private function isSharedStimulus(string $mimeType): bool
     {
         return $mimeType === MediaService::SHARED_STIMULUS_MIME_TYPE;
+    }
+
+    private function getSharedStimulusExtractor(): SharedStimulusMediaExtractor
+    {
+        return $this->getServiceLocator()->get(SharedStimulusMediaExtractor::class);
     }
 
     private function getFileManager(): FileManagement
@@ -82,4 +90,5 @@ class MediaToMediaRelationMigrationTask extends \oat\tao\model\task\migration\Ab
     {
         return $this->getServiceLocator()->get(MediaSavedEventProcessor::class);
     }
+
 }
