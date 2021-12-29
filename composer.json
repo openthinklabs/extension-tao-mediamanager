@@ -59,7 +59,7 @@
 	],		    
     "require": {
         "openthinklabs/oatbox-extension-installer": "~1.1||dev-master",
-        "openthinklabs/lib-generis-search": "2.1.2",
+        "openthinklabs/lib-generis-search": "2.2.0.1",
         "openthinklabs/generis": ">=14.0.0",
         "openthinklabs/tao-core": ">=48.60.0",
         "openthinklabs/extension-tao-item": ">=11.13.4",
