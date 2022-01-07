@@ -55,13 +55,21 @@
 		{
 			"type": "vcs",
 			"url": "git@github.com:openthinklabs/extension-tao-testqti-previewer.git"
-		}        
+		},
+		{
+			"type": "vcs",
+			"url": "git@github.com:openthinklabs/jig.git"
+		},
+        {
+            "type": "vcs",
+            "url": "git@github.com:openthinklabs/composer-npm-bridge.git"
+        }                
 	],		    
     "require": {
         "openthinklabs/oatbox-extension-installer": "~1.1||dev-master",
         "openthinklabs/lib-generis-search": "2.2.0.1",
-        "openthinklabs/generis": ">=14.0.0",
-        "openthinklabs/tao-core": ">=48.60.0",
+        "openthinklabs/generis": "15.13.1.4",
+        "openthinklabs/tao-core": "48.75.0.6",
         "openthinklabs/extension-tao-item": ">=11.13.4",
         "openthinklabs/extension-tao-itemqti": ">=28.22.0",
         "openthinklabs/extension-tao-test": ">=15.0.0",
@@ -70,6 +78,15 @@
     "autoload": {
         "psr-4": {
             "oat\\taoMediaManager\\": ""
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "oat-sa/composer-npm-bridge": true,
+            "oat-sa/oatbox-extension-installer": true,
+            "composer/package-versions-deprecated": true,
+            "openthinklabs/oatbox-extension-installer": true,
+            "openthinklabs/composer-npm-bridge": true
         }
     }
 }
