@@ -2,3 +2,17 @@
 vendor/
 composer.lock
 .idea/
+generis/
+tao/
+taoBackOffice/
+taoDelivery/
+taoDeliveryRdf/
+taoGroups/
+taoItems/
+taoOutcomeUi/
+taoQtiItem/
+taoQtiTest/
+taoQtiTestPreviewer/
+taoResultServer/
+taoTestTaker/
+taoTests/
