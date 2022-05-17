@@ -145,7 +145,8 @@ define([
                     } else {
                         message = relatedItemsPopupTpl({
                             name,
-                            number: haveItemReferences.length,
+                            inUsageMessage:  __('This "%s" is currently used in %d item(s)', name, haveItemReferences.length),
+                            confirmationMessage: __('Are you sure you want to delete this "%s"?', name),
                             items: haveItemReferences
                         });
                     }
