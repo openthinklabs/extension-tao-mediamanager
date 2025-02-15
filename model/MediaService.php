@@ -15,7 +15,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2014-2021 (original work) Open Assessment Technologies SA;
+ * Copyright (c) 2014-2022 (original work) Open Assessment Technologies SA;
  */
 
 declare(strict_types=1);
@@ -51,24 +51,30 @@ class MediaService extends ConfigurableService
     use GenerisServiceTrait;
     use LoggerAwareTrait;
 
-    public const ROOT_CLASS_URI = 'http://www.tao.lu/Ontologies/TAOMedia.rdf#Media';
+    /** @deprecated Use {@link TaoMediaOntology::CLASS_URI_MEDIA_ROOT} instead */
+    public const ROOT_CLASS_URI = TaoMediaOntology::CLASS_URI_MEDIA_ROOT;
 
-    public const PROPERTY_LINK = 'http://www.tao.lu/Ontologies/TAOMedia.rdf#Link';
+    /** @deprecated Use {@link TaoMediaOntology::PROPERTY_LINK} instead */
+    public const PROPERTY_LINK = TaoMediaOntology::PROPERTY_LINK;
 
-    public const PROPERTY_LANGUAGE = 'http://www.tao.lu/Ontologies/TAOMedia.rdf#Language';
+    /** @deprecated Use {@link TaoMediaOntology::PROPERTY_LANGUAGE} instead */
+    public const PROPERTY_LANGUAGE = TaoMediaOntology::PROPERTY_LANGUAGE;
 
-    public const PROPERTY_ALT_TEXT = 'http://www.tao.lu/Ontologies/TAOMedia.rdf#AltText';
+    /** @deprecated Use {@link TaoMediaOntology::PROPERTY_ALT_TEXT} instead */
+    public const PROPERTY_ALT_TEXT = TaoMediaOntology::PROPERTY_ALT_TEXT;
 
-    public const PROPERTY_MD5 = 'http://www.tao.lu/Ontologies/TAOMedia.rdf#md5';
+    /** @deprecated Use {@link TaoMediaOntology::PROPERTY_MD5} instead */
+    public const PROPERTY_MD5 = TaoMediaOntology::PROPERTY_MD5;
 
-    public const PROPERTY_MIME_TYPE = 'http://www.tao.lu/Ontologies/TAOMedia.rdf#mimeType';
+    /** @deprecated Use {@link TaoMediaOntology::PROPERTY_MIME_TYPE} instead */
+    public const PROPERTY_MIME_TYPE = TaoMediaOntology::PROPERTY_MIME_TYPE;
 
     public const SHARED_STIMULUS_MIME_TYPE = 'application/qti+xml';
 
     public const MEDIA_ALLOWED_TYPES = [
         'application/xml',
         'text/xml',
-        MediaService::SHARED_STIMULUS_MIME_TYPE
+        MediaService::SHARED_STIMULUS_MIME_TYPE,
     ];
 
     /**
@@ -85,7 +91,7 @@ class MediaService extends ConfigurableService
      */
     public function getRootClass()
     {
-        return $this->getClass(self::ROOT_CLASS_URI);
+        return $this->getClass(TaoMediaOntology::CLASS_URI_MEDIA_ROOT);
     }
 
     /**
@@ -130,11 +136,11 @@ class MediaService extends ConfigurableService
 
         $properties = [
             OntologyRdfs::RDFS_LABEL => $label,
-            self::PROPERTY_LINK => $link,
-            self::PROPERTY_LANGUAGE => $language,
-            self::PROPERTY_MD5 => md5($content),
-            self::PROPERTY_MIME_TYPE => $mimeType,
-            self::PROPERTY_ALT_TEXT => $label
+            TaoMediaOntology::PROPERTY_LINK => $link,
+            TaoMediaOntology::PROPERTY_LANGUAGE => $language,
+            TaoMediaOntology::PROPERTY_MD5 => md5($content),
+            TaoMediaOntology::PROPERTY_MIME_TYPE => $mimeType,
+            TaoMediaOntology::PROPERTY_ALT_TEXT => $label
         ];
 
         $instance = $clazz->createInstanceWithProperties($properties);
@@ -157,17 +163,24 @@ class MediaService extends ConfigurableService
 
         $properties = [
             OntologyRdfs::RDFS_LABEL => $label,
-            self::PROPERTY_LINK => $link,
-            self::PROPERTY_LANGUAGE => $language,
-            self::PROPERTY_MD5 => md5($content),
-            self::PROPERTY_MIME_TYPE => self::SHARED_STIMULUS_MIME_TYPE,
-            self::PROPERTY_ALT_TEXT => $label,
+            TaoMediaOntology::PROPERTY_LINK => $link,
+            TaoMediaOntology::PROPERTY_LANGUAGE => $language,
+            TaoMediaOntology::PROPERTY_MD5 => md5($content),
+            TaoMediaOntology::PROPERTY_MIME_TYPE => self::SHARED_STIMULUS_MIME_TYPE,
+            TaoMediaOntology::PROPERTY_ALT_TEXT => $label,
         ];
 
         $instance = $clazz->createInstanceWithProperties($properties);
         $id = $instance->getUri();
 
-        $this->dispatchMediaSavedEvent('Initial import', $instance, $link, self::SHARED_STIMULUS_MIME_TYPE, $userId, $content);
+        $this->dispatchMediaSavedEvent(
+            'Initial import',
+            $instance,
+            $link,
+            self::SHARED_STIMULUS_MIME_TYPE,
+            $userId,
+            $content
+        );
 
         return $id;
     }
@@ -186,18 +199,31 @@ class MediaService extends ConfigurableService
         $instance = $this->getResource($id);
         $link = $this->getLink($instance);
         $fileManager = $this->getFileManager();
-        $fileManager->deleteFile($link);
+
+        if (!empty($link)) {
+            $fileManager->deleteFile($link);
+        }
+
         $link = $fileManager->storeFile($fileSource, $instance->getLabel());
 
         if ($link !== false) {
             $md5 = $fileSource instanceof File ? md5($fileSource->read()) : md5_file($fileSource);
             $mime = $this->getResourceMimeType($instance) ?? '';
 
-            $instance->editPropertyValues($this->getProperty(self::PROPERTY_LINK), $link);
-            $instance->editPropertyValues($this->getProperty(self::PROPERTY_MD5), $md5);
+            $instance->editPropertyValues(
+                $this->getProperty(TaoMediaOntology::PROPERTY_LINK),
+                $link
+            );
+            $instance->editPropertyValues(
+                $this->getProperty(TaoMediaOntology::PROPERTY_MD5),
+                $md5
+            );
 
             if ($language) {
-                $instance->editPropertyValues($this->getProperty(self::PROPERTY_LANGUAGE), $language);
+                $instance->editPropertyValues(
+                    $this->getProperty(TaoMediaOntology::PROPERTY_LANGUAGE),
+                    $language
+                );
             }
 
             $this->dispatchMediaSavedEvent('Imported new file', $instance, $fileSource, $mime, $userId);
@@ -267,7 +293,9 @@ class MediaService extends ConfigurableService
 
     private function getLink(RdfResource $resource): string
     {
-        $instance = $resource->getUniquePropertyValue($this->getProperty(self::PROPERTY_LINK));
+        $instance = $resource->getUniquePropertyValue(
+            $this->getProperty(TaoMediaOntology::PROPERTY_LINK)
+        );
 
         $link = $instance instanceof RdfResource ? $instance->getUri() : (string)$instance;
         return $this->getFileSourceUnserializer()->unserialize($link);
@@ -295,7 +323,9 @@ class MediaService extends ConfigurableService
 
     private function getResourceMimeType(RdfResource $resource): ?string
     {
-        $container = $resource->getUniquePropertyValue($resource->getProperty(MediaService::PROPERTY_MIME_TYPE));
+        $container = $resource->getUniquePropertyValue(
+            $resource->getProperty(TaoMediaOntology::PROPERTY_MIME_TYPE)
+        );
 
         if ($container instanceof core_kernel_classes_Literal) {
             $mimeType = (string)$container;

@@ -13,19 +13,41 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2020 (original work) Open Assessment Technologies SA (under the project TAO-PRODUCT);
+ * Copyright (c) 2020-2023 (original work) Open Assessment Technologies SA (under the project TAO-PRODUCT);
  */
 
 define([
     'lodash',
+    'context',
     'taoQtiItem/qtiCommonRenderer/renderers/Img',
-    'taoMediaManager/qtiCreator/widgets/static/img/Widget'
-], function (_, Renderer, Widget) {
+    'taoMediaManager/qtiCreator/widgets/static/img/Widget',
+    'taoQtiItem/qtiCreator/widgets/static/figure/Widget',
+    'taoQtiItem/qtiCreator/model/Figure',
+    'taoQtiItem/qtiCreator/helper/findParentElement'
+], function (_, context, Renderer, Widget, FigureWidget, FigureModel, findParentElement) {
     'use strict';
 
     const CreatorImg = _.clone(Renderer);
 
+    const DISABLE_FIGURE_WIDGET = context.featureFlags['FEATURE_FLAG_DISABLE_FIGURE_WIDGET'];
+
     CreatorImg.render = function render(img, options) {
+        const $container = Renderer.getContainer(img);
+        if (
+            $container.parent('figure').length ||
+            (!DISABLE_FIGURE_WIDGET && $container.parent('span').length && $container.parent('span').data('figure'))
+        ) {
+            // don't create widget if has figure parent
+            if (
+                !DISABLE_FIGURE_WIDGET &&
+                !$container.parent('figure').length &&
+                $container.siblings('figcaption').length
+            ) {
+                $container.siblings('figcaption').remove();
+            }
+            return CreatorImg;
+        }
+
         options = options || {};
         options.baseUrl = this.getOption('baseUrl');
         options.uri = this.getOption('uri');
@@ -33,7 +55,26 @@ define([
         options.mediaManager = this.getOption('mediaManager');
         options.assetManager = this.getAssetManager();
 
-        Widget.build(img, Renderer.getContainer(img), this.getOption('bodyElementOptionForm'), options);
+        if (
+            !DISABLE_FIGURE_WIDGET &&
+            !$container.closest('.qti-choice, .qti-flow-container').length &&
+            !$container.closest('.qti-table caption').length
+        ) {
+            const parent = findParentElement(img.rootElement, img.serial);
+            parent.removeElement(img);
+            const figure = new FigureModel();
+            parent.setElement(figure);
+            const figureRenderer = parent.getRenderer();
+            if (figureRenderer) {
+                figure.setRenderer(figureRenderer);
+                figureRenderer.load(() => {}, ['figure']);
+            }
+            figure.setElement(img);
+            const $wrap = $container.wrap(`<span data-serial="${figure.serial}">`).parent();
+            FigureWidget.build(figure, $wrap, this.getOption('bodyElementOptionForm'), options);
+        } else {
+            Widget.build(img, Renderer.getContainer(img), this.getOption('bodyElementOptionForm'), options);
+        }
     };
 
     return CreatorImg;

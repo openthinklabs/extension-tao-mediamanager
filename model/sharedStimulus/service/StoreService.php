@@ -22,8 +22,9 @@ declare(strict_types=1);
 
 namespace oat\taoMediaManager\model\sharedStimulus\service;
 
-use League\Flysystem\FilesystemInterface;
 use oat\oatbox\filesystem\File;
+use oat\oatbox\filesystem\FileSystem;
+use oat\oatbox\filesystem\FilesystemInterface;
 use oat\oatbox\filesystem\FileSystemService;
 use oat\oatbox\service\ConfigurableService;
 use oat\taoMediaManager\model\fileManagement\FlySystemManagement;
@@ -31,26 +32,53 @@ use oat\taoMediaManager\model\fileManagement\FlySystemManagement;
 class StoreService extends ConfigurableService
 {
     /**
-     * name of sub-directory to store stylesheets
+     * Name of subdirectory to store stylesheets
      */
     public const CSS_DIR_NAME = 'css';
 
     /**
      * @param string|File $stimulusXmlSourceFile
      */
-    public function store($stimulusXmlSourceFile, string $stimulusFilename, array $cssFiles = []): string
-    {
+    public function store(
+        $stimulusXmlSourceFile,
+        string $stimulusFilename,
+        array $cssFiles = []
+    ): string {
+        if ($stimulusXmlSourceFile instanceof File) {
+            return $this->storeStream(
+                $stimulusXmlSourceFile->readStream(),
+                $stimulusFilename,
+                $cssFiles
+            );
+        }
+
+        return $this->storeStream(
+            fopen($stimulusXmlSourceFile, 'r'),
+            $stimulusFilename,
+            $cssFiles
+        );
+    }
+
+    /**
+     * @param resource $stimulusXmlStream
+     */
+    public function storeStream(
+        $stimulusXmlStream,
+        string $stimulusFilename,
+        array $cssFiles = []
+    ): string {
         $fs = $this->getFileSystem();
 
         $dirname = $this->getUniqueName($stimulusFilename);
-        $fs->createDir($dirname);
+        $fs->createDirectory($dirname);
 
-        $stimulusXmlStream = $stimulusXmlSourceFile instanceof File ? $stimulusXmlSourceFile->readStream() : fopen($stimulusXmlSourceFile, 'r');
-
-        $fs->putStream($dirname . DIRECTORY_SEPARATOR . $stimulusFilename, $stimulusXmlStream);
+        $fs->writeStream(
+            $dirname . DIRECTORY_SEPARATOR . $stimulusFilename,
+            $stimulusXmlStream
+        );
 
         if (count($cssFiles)) {
-            $fs->createDir($dirname . DIRECTORY_SEPARATOR . self::CSS_DIR_NAME);
+            $fs->createDirectory($dirname . DIRECTORY_SEPARATOR . self::CSS_DIR_NAME);
             foreach ($cssFiles as $file) {
                 if (!file_exists($file)) {
                     $this->getLogger()->notice(sprintf("file %s does not exist", $file));
@@ -62,7 +90,7 @@ class StoreService extends ConfigurableService
                     continue;
                 }
 
-                $fs->putStream(
+                $fs->writeStream(
                     $dirname . DIRECTORY_SEPARATOR . self::CSS_DIR_NAME . DIRECTORY_SEPARATOR . basename($file),
                     fopen($file, 'r')
                 );

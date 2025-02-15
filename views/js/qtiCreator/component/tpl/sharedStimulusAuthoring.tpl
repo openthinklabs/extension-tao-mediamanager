@@ -37,6 +37,18 @@
         <div class="item-editor-sidebar-wrapper right-bar sidebar-popup-parent">
             <div class="item-editor-sidebar" id="item-editor-item-widget-bar">
                 <div class="item-editor-item-related sidebar-right-section-box" id="item-editor-item-property-bar">
+                    <section class="tool-group clearfix" id="sidebar-right-css-manager" style="display: none;">
+
+                        <h2>{{__ 'Style Sheet Manager'}}</h2>
+
+                        <div class="panel">
+
+                            <ul class="none" id="style-sheet-toggler">
+                                <!-- TAO style sheet -->
+                            </ul>
+                            <button id="stylesheet-uploader" class="btn-info small block">{{__ 'Add Style Sheet'}}</button>
+                        </div>
+                    </section>
                     <section class="tool-group clearfix" id="sidebar-right-passage-properties">
                         <h2>{{__ 'Passage Properties'}}</h2>
                         <div class="panel"></div>
@@ -63,28 +75,28 @@
                                         <button class="icon-eraser reset-button" data-value="background-color"
                                             aria-label="{{__ 'Remove custom background color'}}"></button>
                                         <button class="color-trigger" id="initial-bg" data-value="background-color"
-                                            data-target="body div.qti-item .hashClass" data-additional="padding:20px"></button>
+                                            data-target="body div.qti-item" data-additional="padding:20px"></button>
                                     </div>
                                     <div class="clearfix">
                                         <label for="initial-color" class="truncate">{{__ 'Text color'}}</label>
                                         <button class="icon-eraser reset-button" data-value="color"
                                               aria-label="{{__ 'Remove custom text color'}}"></button>
                                         <button class="color-trigger" id="initial-color" data-value="color"
-                                              data-target="body div.qti-item .hashClass"></button>
+                                              data-target="body div.qti-item"></button>
                                     </div>
                                     <div class="clearfix">
                                         <label for="initial-color" class="truncate">{{__ 'Border color'}}</label>
                                         <button class="icon-eraser reset-button" data-value="color"
                                               aria-label="{{__ 'Remove custom border color'}}"></button>
                                         <button class="color-trigger" id="initial-color" data-value="border-color"
-                                              data-target="body div.qti-item .hashClass" data-additional="border-width:4px;border-style:solid;padding:20px"></button>
+                                              data-target="body div.qti-item" data-additional="border-width:4px;border-style:solid;padding:20px"></button>
                                     </div>
                                     <div class="clearfix">
                                         <label for="initial-color" class="truncate">{{__ 'Table headings'}}</label>
                                         <button class="icon-eraser reset-button" data-value="color"
                                               aria-label="{{__ 'Remove custom background color'}}"></button>
                                         <button class="color-trigger" id="initial-color" data-value="background-color"
-                                              data-target="body div.qti-item .hashClass table th"></button>
+                                              data-target="body div.qti-item table th"></button>
                                     </div>
                                 </div>
                             </div>
@@ -96,7 +108,7 @@
 
                             <div class="reset-group">
                                 <select
-                                    data-target="body div.qti-item .hashClass"
+                                    data-target="body div.qti-item *"
                                     id="item-editor-font-selector"
                                     data-has-search="false"
                                     data-placeholder="{{__ 'Default'}}"
@@ -110,18 +122,18 @@
                         <div class="panel">
                             <div>{{__ 'Font size'}}</div>
                             <div class="reset-group">
-                                        <span id="item-editor-font-size-changer" data-target="body div.qti-item .hashClass">
-                                            <button data-action="reduce" aria-label="{{__ 'Reduce font size'}}"
-                                               class="icon-smaller"></button>
-                                            <button data-action="enlarge" aria-label="{{__ 'Enlarge font size'}}"
-                                               class="icon-larger"></button>
-                                        </span>
+                                <span id="item-editor-font-size-changer" data-target="body div.qti-item *">
+                                    <button data-action="reduce" aria-label="{{__ 'Reduce font size'}}"
+                                        class="icon-smaller"></button>
+                                    <button data-action="enlarge" aria-label="{{__ 'Enlarge font size'}}"
+                                        class="icon-larger"></button>
+                                </span>
 
                                 <span id="item-editor-font-size-manual-input" class="item-editor-unit-input-box">
-                                            <input type="text" class="item-editor-font-size-text has-icon"
-                                                   placeholder="{{__ 'e.g. 13'}}">
-                                                <span class="unit-indicator">px</span>
-                                        </span>
+                                    <input type="text" class="item-editor-font-size-text has-icon"
+                                            placeholder="{{__ 'e.g. 13'}}">
+                                    <span class="unit-indicator">px</span>
+                                </span>
                                 <button class="icon-eraser reset-button" data-role="font-size-reset"
                                       aria-label="{{__ 'Remove custom font size'}}"></button>
                             </div>
@@ -153,7 +165,7 @@
                                         <button class="icon-eraser reset-button" data-value="background-color"
                                               aria-label="{{__ 'Remove custom background color'}}"></button>
                                         <button class="color-trigger" id="initial-bg" data-value="background-color"
-                                              data-target="body div.qti-item .custom-text-box.hashClass" data-additional="padding:20px"></button>
+                                              data-target="body div.qti-item .custom-text-box.hashClass" data-additional="padding:20px;margin-bottom: 0;"></button>
                                     </div>
                                     <div class="clearfix">
                                         <label for="initial-color" class="truncate">{{__ 'Text color'}}</label>
@@ -186,7 +198,7 @@
 
                             <div class="reset-group">
                                 <select
-                                    data-target="body div.qti-item .custom-text-box.hashClass"
+                                    data-target="body div.qti-item .custom-text-box.hashClass *"
                                     id="item-editor-font-selector"
                                     data-has-search="false"
                                     data-placeholder="{{__ 'Default'}}"
@@ -200,7 +212,7 @@
                         <div class="panel">
                             <div>{{__ 'Font size'}}</div>
                             <div class="reset-group">
-                                        <span id="item-editor-font-size-changer" data-target="body div.qti-item .custom-text-box.hashClass">
+                                        <span id="item-editor-font-size-changer" data-target="body div.qti-item .custom-text-box.hashClass *">
                                             <button data-action="reduce" aria-label="{{__ 'Reduce font size'}}"
                                                class="icon-smaller"></button>
                                             <button data-action="enlarge" aria-label="{{__ 'Enlarge font size'}}"

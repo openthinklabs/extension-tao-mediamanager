@@ -23,26 +23,30 @@ declare(strict_types=1);
 namespace oat\taoMediaManager\model\relation\repository\rdf;
 
 use common_exception_Error;
+use common_persistence_SqlPersistence;
 use core_kernel_classes_Class as ClassResource;
 use core_kernel_classes_Property;
 use LogicException;
 use oat\generis\model\kernel\persistence\smoothsql\search\ComplexSearchService;
 use oat\generis\model\OntologyAwareTrait;
+use oat\generis\persistence\PersistenceManager;
 use oat\oatbox\service\ConfigurableService;
 use oat\search\base\exception\SearchGateWayExeption;
 use oat\search\base\QueryInterface;
 use oat\search\helper\SupportedOperatorHelper;
 use oat\taoMediaManager\model\exception\ComplexSearchLimitException;
-use oat\taoMediaManager\model\MediaService;
 use oat\taoMediaManager\model\relation\MediaRelation;
 use oat\taoMediaManager\model\relation\MediaRelationCollection;
 use oat\taoMediaManager\model\relation\repository\MediaRelationRepositoryInterface;
 use oat\taoMediaManager\model\relation\repository\query\FindAllByTargetQuery;
 use oat\taoMediaManager\model\relation\repository\query\FindAllQuery;
+use oat\taoMediaManager\model\TaoMediaOntology;
+use PDO;
 
 class RdfMediaRelationRepository extends ConfigurableService implements MediaRelationRepositoryInterface
 {
     use OntologyAwareTrait;
+
     private const CLASS_MEDIA_LIMIT = 20;
     private const NESTED_CLASS_LIMIT = 10;
 
@@ -78,7 +82,11 @@ class RdfMediaRelationRepository extends ConfigurableService implements MediaRel
 
         $includedMedia = [];
         $includedMediaQueryBuilder = $this->getComplexSearchService()->query();
-        $includedMediaQuery = $this->getComplexSearchService()->searchType($includedMediaQueryBuilder, $class->getUri(), true);
+        $includedMediaQuery = $this->getComplexSearchService()->searchType(
+            $includedMediaQueryBuilder,
+            $class->getUri(),
+            true
+        );
         $includedMediaQueryBuilder->setCriteria($includedMediaQuery);
         $includedMediaResult = $this->getComplexSearchService()->getGateway()->search($includedMediaQueryBuilder);
 
@@ -188,16 +196,15 @@ class RdfMediaRelationRepository extends ConfigurableService implements MediaRel
 
         return new MediaRelationCollection(
             ... $this->mapTargetRelations(
-            MediaRelation::ITEM_TYPE,
-            $rdfMediaRelations[self::ITEM_RELATION_PROPERTY],
-            $mediaId
-        )->getIterator(),
-
+                MediaRelation::ITEM_TYPE,
+                $rdfMediaRelations[self::ITEM_RELATION_PROPERTY],
+                $mediaId
+            )->getIterator(),
             ... $this->mapTargetRelations(
-            MediaRelation::MEDIA_TYPE,
-            $rdfMediaRelations[self::MEDIA_RELATION_PROPERTY],
-            $mediaId
-        )->getIterator()
+                MediaRelation::MEDIA_TYPE,
+                $rdfMediaRelations[self::MEDIA_RELATION_PROPERTY],
+                $mediaId
+            )->getIterator()
         );
     }
 
@@ -207,7 +214,11 @@ class RdfMediaRelationRepository extends ConfigurableService implements MediaRel
 
         $queryBuilder = $search->query();
 
-        $query = $search->searchType($queryBuilder, MediaService::ROOT_CLASS_URI, true);
+        $query = $search->searchType(
+            $queryBuilder,
+            TaoMediaOntology::CLASS_URI_MEDIA_ROOT,
+            true
+        );
 
         $this->applyQueryTargetType($query, $targetId, $type);
 
@@ -219,10 +230,29 @@ class RdfMediaRelationRepository extends ConfigurableService implements MediaRel
         return $this->mapSourceRelations($type, (array)$result, $targetId);
     }
 
+    public function getItemAssetUris(string $itemUri): array
+    {
+        $statement = $this->getPersistence()->query(
+            'SELECT DISTINCT subject FROM statements WHERE predicate = ? AND object = ?',
+            [self::ITEM_RELATION_PROPERTY, $itemUri]
+        );
+
+        return $statement->fetchAll(PDO::FETCH_COLUMN);
+    }
+
+    public function getRelatedItemUrisByAssetUri(string $assetUri): array
+    {
+        $statement = $this->getPersistence()->query(
+            'SELECT DISTINCT object FROM statements WHERE predicate = ? AND subject = ?',
+            [self::ITEM_RELATION_PROPERTY, $assetUri]
+        );
+
+        return $statement->fetchAll(PDO::FETCH_COLUMN);
+    }
+
     private function applyQueryTargetType(QueryInterface $query, $targetId, $type)
     {
         switch ($type) {
-
             case MediaRelation::ITEM_TYPE:
                 $query
                     ->add(self::ITEM_RELATION_PROPERTY)
@@ -237,7 +267,6 @@ class RdfMediaRelationRepository extends ConfigurableService implements MediaRel
 
             default:
                 throw new LogicException('MediaRelation query type is unknown.');
-
         }
     }
 
@@ -251,8 +280,11 @@ class RdfMediaRelationRepository extends ConfigurableService implements MediaRel
      * @param Resource[]
      * @param string $sourceId
      */
-    private function mapTargetRelations(string $type, array $rdfMediaRelations, string $sourceId): MediaRelationCollection
-    {
+    private function mapTargetRelations(
+        string $type,
+        array $rdfMediaRelations,
+        string $sourceId
+    ): MediaRelationCollection {
         $collection = new MediaRelationCollection();
 
         foreach ($rdfMediaRelations as $target) {
@@ -264,8 +296,12 @@ class RdfMediaRelationRepository extends ConfigurableService implements MediaRel
         return $collection;
     }
 
-    private function mapSourceRelations(string $type, array $rdfMediaRelations, string $targetId, string $targetLabel = ''): MediaRelationCollection
-    {
+    private function mapSourceRelations(
+        string $type,
+        array $rdfMediaRelations,
+        string $targetId,
+        string $targetLabel = ''
+    ): MediaRelationCollection {
         $collection = new MediaRelationCollection();
 
         foreach ($rdfMediaRelations as $source) {
@@ -277,9 +313,21 @@ class RdfMediaRelationRepository extends ConfigurableService implements MediaRel
         return $collection;
     }
 
-    private function createMediaRelation(string $type, string $targetId, string $mediaId, string $targetLabel = ''): MediaRelation
-    {
+    private function createMediaRelation(
+        string $type,
+        string $targetId,
+        string $mediaId,
+        string $targetLabel = ''
+    ): MediaRelation {
         return (new MediaRelation($type, $targetId, $targetLabel))
             ->withSourceId($mediaId);
+    }
+
+    private function getPersistence(): common_persistence_SqlPersistence
+    {
+        /** @var PersistenceManager $persistenceManager */
+        $persistenceManager = $this->getServiceManager()->get(PersistenceManager::SERVICE_ID);
+
+        return $persistenceManager->getPersistenceById('default');
     }
 }

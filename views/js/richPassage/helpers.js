@@ -16,7 +16,14 @@
  * Copyright (c) 2021 (original work) Open Assessment Technologies SA;
  */
 
-define(['lodash', 'uri', 'util/url', 'core/dataProvider/request'], function (_, uri, urlUtil, request) {
+define([
+    'jquery',
+    'lodash',
+    'uri',
+    'util/url',
+    'core/dataProvider/request',
+    'taoMediaManager/qtiCreator/helper/formatStyles'
+], function ($, _, uri, urlUtil, request, formatStyles) {
     'use strict';
 
     /**
@@ -87,26 +94,30 @@ define(['lodash', 'uri', 'util/url', 'core/dataProvider/request'], function (_, 
                             uri: passageUri
                         })
                             .then(response => {
-                                response.forEach((element, index) => {
+                                response.children.forEach((stylesheet, index) => {
+                                    const stylesheetHref = urlUtil.route('loadStylesheet', 'SharedStimulusStyling', 'taoMediaManager', {
+                                        uri: passageUri,
+                                        stylesheet: stylesheet.name
+                                    });
+                                    if ($(`link[href*='${stylesheetHref}']`).length) {
+                                        //avoid load repeated CSS files on Item authoring Preview
+                                        return false;
+                                    }
                                     const serial = `stylesheet_${id}_${index}`;
                                     itemData.content.data.stylesheets[serial] = {
                                         qtiClass: 'stylesheet',
                                         attributes: {
-                                            href: urlUtil.route(
-                                                'loadStylesheet',
-                                                'SharedStimulusStyling',
-                                                'taoMediaManager',
-                                                {
-                                                    uri: passageUri,
-                                                    stylesheet: element
-                                                }
-                                            ),
+                                            href: stylesheetHref,
                                             media: 'all',
                                             title: '',
-                                            type: 'text/css'
+                                            type: 'text/css',
+                                            onload: (e => formatStyles.handleStylesheetLoad(e))
                                         },
                                         serial
                                     };
+                                    itemData.content.data.stylesheets[serial].attributes.includeHref = passageHref;
+                                    itemData.content.data.stylesheets[serial].attributes.includeSerial = elem.serial;
+                                    elem.stylesheets = {[serial]: stylesheetHref};
                                 });
                             })
                             .catch()

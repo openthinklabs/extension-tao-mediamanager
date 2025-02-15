@@ -22,7 +22,7 @@ declare(strict_types=1);
 
 namespace oat\taoMediaManager\model\sharedStimulus\css\service;
 
-use League\Flysystem\FileNotFoundException;
+use oat\oatbox\filesystem\FilesystemException;
 use oat\oatbox\service\ConfigurableService;
 use oat\taoMediaManager\model\sharedStimulus\css\dto\LoadStylesheet;
 use oat\taoMediaManager\model\sharedStimulus\css\repository\StylesheetRepository;
@@ -36,7 +36,7 @@ class LoadStylesheetClassesService extends ConfigurableService
         $path = $stylesheetRepository->getPath($loadStylesheetDTO->getUri());
 
         if ($path === '.') {
-            throw new \Exception ('Shared stimulus stored as single file');
+            throw new \Exception('Shared stimulus stored as single file');
         }
 
         try {
@@ -45,7 +45,7 @@ class LoadStylesheetClassesService extends ConfigurableService
             );
 
             return $this->cssToArray($content);
-        } catch (FileNotFoundException $e) {
+        } catch (FilesystemException $e) {
             $this->logDebug(
                 sprintf(
                     'Passage %s does not contain stylesheet %s. An empty array will be returned.',

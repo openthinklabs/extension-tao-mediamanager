@@ -23,7 +23,7 @@ declare(strict_types=1);
 namespace oat\taoMediaManager\model\sharedStimulus\css\service;
 
 use Exception;
-use League\Flysystem\FileNotFoundException;
+use oat\oatbox\filesystem\FilesystemException;
 use oat\oatbox\service\ConfigurableService;
 use oat\taoMediaManager\model\sharedStimulus\css\dto\SaveStylesheetClasses;
 use oat\taoMediaManager\model\sharedStimulus\css\repository\StylesheetRepository;
@@ -40,7 +40,7 @@ class SaveStylesheetClassesService extends ConfigurableService
         $path = $this->getStylesheetRepository()->getPath($saveStylesheetClassesDTO->getUri());
 
         if ($path === '.') {
-            throw new Exception ('Shared stimulus stored as single file');
+            throw new Exception('Shared stimulus stored as single file');
         }
 
         $cssClassesArray = $saveStylesheetClassesDTO->getCssClassesArray();
@@ -52,7 +52,7 @@ class SaveStylesheetClassesService extends ConfigurableService
         }
 
         $content = $this->getCssContentFromArray($cssClassesArray);
-        $this->getStylesheetRepository()->put(
+        $this->getStylesheetRepository()->write(
             $path . DIRECTORY_SEPARATOR . $saveStylesheetClassesDTO->getStylesheetUri(),
             $content
         );
@@ -62,7 +62,7 @@ class SaveStylesheetClassesService extends ConfigurableService
     {
         try {
             $this->getStylesheetRepository()->delete($path);
-        } catch (FileNotFoundException $exception) {
+        } catch (FilesystemException $exception) {
             $this->logDebug(sprintf('Stylesheet %s to delete was not found when trying to clear styles', $path));
         }
     }
@@ -86,8 +86,7 @@ class SaveStylesheetClassesService extends ConfigurableService
                         }
                         $css .= '}';
                     }
-                } // regular selectors
-                else {
+                } else { // regular selectors
                     $css .= $key2 . ':' . $value2 . ';';
                 }
             }

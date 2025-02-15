@@ -22,6 +22,7 @@
 
 namespace oat\taoMediaManager\model;
 
+use core_kernel_classes_Resource;
 use oat\generis\Helper\SystemHelper;
 use oat\tao\model\TaoOntology;
 
@@ -46,7 +47,10 @@ class FileImportForm extends \tao_helpers_form_FormContainer
     {
         $this->form = new \tao_helpers_form_xhtml_Form('export');
         $submitElt = \tao_helpers_form_FormFactory::getElement('import', 'Free');
-        $submitElt->setValue('<a href="#" class="form-submitter btn-success small"><span class="icon-import"></span> ' . __('Import') . '</a>');
+        $submitElt->setValue(
+            '<a href="#" class="form-submitter btn-success small"><span class="icon-import"></span> '
+                . __('Import') . '</a>'
+        );
 
         $this->form->setActions([$submitElt], 'bottom');
         $this->form->setActions([], 'top');
@@ -75,17 +79,20 @@ class FileImportForm extends \tao_helpers_form_FormContainer
         $this->form->addElement($fileElt);
 
         $langService = \tao_models_classes_LanguageService::singleton();
-        $dataUsage = new \core_kernel_classes_Resource(TaoOntology::PROPERTY_STANCE_LANGUAGE_USAGE_DATA);
+        $dataUsage = new core_kernel_classes_Resource(TaoOntology::PROPERTY_STANCE_LANGUAGE_USAGE_DATA);
         $dataLang = \common_session_SessionManager::getSession()->getDataLanguage();
         $dataLang = 'http://www.tao.lu/Ontologies/TAO.rdf#Lang' . $dataLang;
         if (!is_null($this->instanceUri)) {
-            $instance = new \core_kernel_classes_Resource($this->instanceUri);
-            $lang = $instance->getOnePropertyValue(new \core_kernel_classes_Property(MediaService::PROPERTY_LANGUAGE));
-            if ($lang instanceof \core_kernel_classes_Resource) {
+            $instance = new core_kernel_classes_Resource($this->instanceUri);
+            $lang = $instance->getOnePropertyValue(
+                new \core_kernel_classes_Property(TaoMediaOntology::PROPERTY_LANGUAGE)
+            );
+
+            if ($lang instanceof core_kernel_classes_Resource) {
                 $dataLang = $lang->getUri();
             }
         }
-        
+
         $langOptions = [];
         foreach ($langService->getAvailableLanguagesByUsage($dataUsage) as $lang) {
             $langOptions[\tao_helpers_Uri::encode($lang->getUri())] = $lang->getLabel();

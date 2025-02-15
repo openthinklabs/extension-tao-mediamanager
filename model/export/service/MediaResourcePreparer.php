@@ -38,6 +38,7 @@ use qtism\data\content\BodyElement;
 use qtism\data\content\xhtml\Img;
 use qtism\data\content\xhtml\QtiObject;
 use qtism\data\storage\xml\XmlDocument;
+use tao_models_classes_FileNotFoundException;
 
 class MediaResourcePreparer extends ConfigurableService implements MediaResourcePreparerInterface
 {
@@ -60,12 +61,27 @@ class MediaResourcePreparer extends ConfigurableService implements MediaResource
         $xmlDocument = new XmlDocument();
         $xmlDocument->loadFromString((string)$contents);
 
+        $missingMediaAssets = [];
         foreach ($this->getComponents($xmlDocument) as $component) {
             $mediaAsset = $this->getMediaAsset($component);
 
             if ($mediaAsset) {
-                $this->replaceComponentPath($component, $mediaAsset);
+                try {
+                    $this->replaceComponentPath($component, $mediaAsset);
+                } catch (tao_models_classes_FileNotFoundException $fileNotFoundException) {
+                    $missingAsset = 'FilePath: ' . $fileNotFoundException->getFilePath();
+                    if ($component instanceof Img) {
+                        $missingAsset = 'Image: ' . $component->getAlt() . ' ' . $missingAsset;
+                    }
+
+                    $missingMediaAssets[] = $missingAsset;
+                }
             }
+        }
+
+        if (!empty($missingMediaAssets)) {
+            // Report missing file errors to upper levels in aggregated form.
+            throw new MediaReferencesNotFoundException($missingMediaAssets);
         }
 
         return $xmlDocument->saveToString();
@@ -80,6 +96,10 @@ class MediaResourcePreparer extends ConfigurableService implements MediaResource
         $stream = $this->getFileManagement()->getFileStream($fileInfo['link']);
 
         $contents = $stream->getContents();
+
+        if (!$contents) {
+            throw new tao_models_classes_FileNotFoundException($fileInfo['link']);
+        }
 
         $base64Content = $this->getEncodedSource($fileInfo['mime'], $contents);
 

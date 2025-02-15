@@ -38,7 +38,10 @@ use tao_models_classes_FileNotFoundException;
 
 use function GuzzleHttp\Psr7\stream_for;
 
-class MediaSource extends Configurable implements MediaManagement, ProcessedFileStreamAware, AccessControlEnablerInterface
+class MediaSource extends Configurable implements
+    MediaManagement,
+    ProcessedFileStreamAware,
+    AccessControlEnablerInterface
 {
     use LoggerAwareTrait;
     use OntologyAwareTrait;
@@ -138,15 +141,15 @@ class MediaSource extends Configurable implements MediaManagement, ProcessedFile
         // get the media link from the resource
         $resource = $this->getResource(tao_helpers_Uri::decode($this->removeSchemaFromUriOrLink($link)));
         $properties = [
-            $this->getProperty(MediaService::PROPERTY_LINK),
-            $this->getProperty(MediaService::PROPERTY_MIME_TYPE),
-            $this->getProperty(MediaService::PROPERTY_ALT_TEXT)
+            $this->getProperty(TaoMediaOntology::PROPERTY_LINK),
+            $this->getProperty(TaoMediaOntology::PROPERTY_MIME_TYPE),
+            $this->getProperty(TaoMediaOntology::PROPERTY_ALT_TEXT)
         ];
 
         $propertiesValues = $resource->getPropertiesValues($properties);
 
-        $fileLink = $propertiesValues[MediaService::PROPERTY_LINK][0] ?? null;
-        $mime = $propertiesValues[MediaService::PROPERTY_MIME_TYPE][0] ?? null;
+        $fileLink = $propertiesValues[TaoMediaOntology::PROPERTY_LINK][0] ?? null;
+        $mime = $propertiesValues[TaoMediaOntology::PROPERTY_MIME_TYPE][0] ?? null;
         $fileLink = $fileLink instanceof \core_kernel_classes_Resource ? $fileLink->getUri() : (string)$fileLink;
         $fileLink = $this->getFileSourceUnserializer()->unserialize($fileLink);
 
@@ -155,7 +158,7 @@ class MediaSource extends Configurable implements MediaManagement, ProcessedFile
         }
 
         // add the alt text to file array
-        $altArray = $propertiesValues[MediaService::PROPERTY_ALT_TEXT] ?? null;
+        $altArray = $propertiesValues[TaoMediaOntology::PROPERTY_ALT_TEXT] ?? null;
         $alt = $resource->getLabel();
         if (count($altArray) > 0) {
             $alt = (string)$altArray[0];
@@ -183,10 +186,14 @@ class MediaSource extends Configurable implements MediaManagement, ProcessedFile
     public function getFileStream($link)
     {
         $resource = $this->getResource(tao_helpers_Uri::decode($link));
-        $fileLink = $resource->getOnePropertyValue($this->getProperty(MediaService::PROPERTY_LINK));
+        $fileLink = $resource->getOnePropertyValue(
+            $this->getProperty(TaoMediaOntology::PROPERTY_LINK)
+        );
+
         if (is_null($fileLink)) {
             throw new tao_models_classes_FileNotFoundException($link);
         }
+
         $fileLink = $fileLink instanceof \core_kernel_classes_Resource ? $fileLink->getUri() : (string)$fileLink;
         $fileLink = $this->getFileSourceUnserializer()->unserialize($fileLink);
 
@@ -245,7 +252,10 @@ class MediaSource extends Configurable implements MediaManagement, ProcessedFile
     public function forceMimeType($link, $mimeType)
     {
         $resource = $this->getResource(tao_helpers_Uri::decode($link));
-        return $resource->editPropertyValues($this->getProperty(MediaService::PROPERTY_MIME_TYPE), $mimeType);
+        return $resource->editPropertyValues(
+            $this->getProperty(TaoMediaOntology::PROPERTY_MIME_TYPE),
+            $mimeType
+        );
     }
 
     /**
@@ -307,7 +317,9 @@ class MediaSource extends Configurable implements MediaManagement, ProcessedFile
 
     protected function getRootClassUri()
     {
-        return $this->hasOption('rootClass') ? $this->getOption('rootClass') : MediaService::singleton()->getRootClass();
+        return $this->hasOption('rootClass')
+            ? $this->getOption('rootClass')
+            : MediaService::singleton()->getRootClass();
     }
 
     protected function getLang()
@@ -396,7 +408,7 @@ class MediaSource extends Configurable implements MediaManagement, ProcessedFile
             $filter = [];
 
             if (!empty($acceptableMime)) {
-                $filter = array_merge($filter, [MediaService::PROPERTY_MIME_TYPE => $acceptableMime]);
+                $filter = array_merge($filter, [TaoMediaOntology::PROPERTY_MIME_TYPE => $acceptableMime]);
             }
 
             $options = array_filter([

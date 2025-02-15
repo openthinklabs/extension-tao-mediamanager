@@ -41,7 +41,7 @@ define([
         alignmentHelper.initAlignment(this);
 
         //check file exists:
-        inlineHelper.checkFileExists(this, 'src', options.baseUrl);
+        inlineHelper.checkFileExists(this, img, 'src', options.baseUrl);
         $('#item-editor-scope').on(`filedelete.resourcemgr.${this.element.serial}`, (e, src) => {
             if (this.getAssetManager().resolve(img.attr('src')) === this.getAssetManager().resolve(src)) {
                 img.attr('src', '');
